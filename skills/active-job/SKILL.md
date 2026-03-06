@@ -366,7 +366,7 @@ ActiveJob.perform_all_later(jobs)
 
 ## Solid Queue Configuration
 
-See `reference.md` for full multi-worker queue.yml examples.
+See `references/queues-and-priority.md` for full multi-worker queue.yml examples.
 
 ### Starting the Queue Worker
 
@@ -482,3 +482,14 @@ ProcessPaymentJob.perform_now(Order.last)
 # config/environments/development.rb
 config.active_job.verbose_enqueue_logs = true
 ```
+
+
+## Reference Files
+
+See the `references/` directory for detailed patterns and edge cases:
+- `references/serialization.md` — Job lifecycle, GlobalID, argument types, custom serializers
+- `references/error-handling.md` — retry_on, discard_on, idempotency guards
+- `references/queues-and-priority.md` — Multi-worker setup, naming, priority, ActionMailer integration
+- `references/testing.md` — Enqueue assertions, job behavior, error handling, scheduled job tests
+- `references/solid-queue.md` — Database setup, concurrency controls, recurring tasks, monitoring
+- `references/advanced-patterns.md` — Continuations, performance, anti-patterns, migration guides

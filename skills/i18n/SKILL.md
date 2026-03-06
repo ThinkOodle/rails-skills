@@ -33,7 +33,7 @@ Internationalize and localize Rails applications using the I18n framework. Every
 
 ### Step 1: Check Existing I18n Setup
 
-**ALWAYS inspect the project's current I18n configuration first:**
+**Inspect the project's current I18n configuration first** — mismatched conventions cause key lookup failures:
 
 ```bash
 # Check existing locale files
@@ -52,7 +52,7 @@ rg "I18n\.t\b|\ t[\(\ ][\'\"\.]" --type ruby --type erb -l
 rg -l ">[A-Z][a-z]+" app/views/ --type erb
 ```
 
-**Match existing conventions.** If the project uses flat keys, don't introduce nested. If they organize by feature, follow that.
+Match existing conventions. If the project uses flat keys, don't introduce nested. If they organize by feature, follow that.
 
 ### Step 2: Configure I18n Properly
 
@@ -76,7 +76,7 @@ config.i18n.raise_on_missing_translations = true
 config.i18n.raise_on_missing_translations = true
 ```
 
-**CRITICAL: Always set `available_locales`.** Without it, any locale string is accepted, which is a security risk and source of bugs.
+**Set `available_locales`** — without it, any locale string is accepted, which opens the door to file-system traversal attacks and unexpected fallback behavior.
 
 ### Step 3: Use Translation Helpers Correctly
 
@@ -134,7 +134,7 @@ class BooksController < ApplicationController
 end
 ```
 
-**RULE: Always use lazy lookups (`.key`) in views and controllers.** Only use full paths when referencing shared/global keys.
+**Prefer lazy lookups (`.key`) in views and controllers** — they keep translation keys DRY and tied to the file structure. Only use full paths when referencing shared/global keys.
 
 #### Interpolation
 
@@ -149,7 +149,7 @@ t("greeting", name: current_user.name)
 t("item_count", count: 5, location: "your cart")
 ```
 
-**NEVER** use `scope` or `default` as interpolation variable names — they're reserved and raise `I18n::ReservedInterpolationKey`.
+Don't use `scope` or `default` as interpolation variable names — they're reserved by I18n and raise `I18n::ReservedInterpolationKey`.
 
 #### Pluralization
 
@@ -282,7 +282,7 @@ l(Date.today, format: :short)        # Short format
 l(Time.current, format: :long)       # Long format
 ```
 
-**Always use `l()` for dates/times** — never `strftime` directly if you want locale-aware output.
+**Use `l()` for dates/times** — `strftime` ignores the current locale, so dates won't format correctly for non-English users.
 
 #### Number Formatting
 
@@ -315,7 +315,7 @@ es:
 
 ### Step 6: Set Locale Per Request
 
-**Use `around_action` with `I18n.with_locale` — NEVER set `I18n.locale =` directly** (it leaks across requests in threaded servers).
+**Use `around_action` with `I18n.with_locale`** — setting `I18n.locale =` directly leaks across requests in threaded servers (Puma), causing users to see other users' locales.
 
 #### From URL Path (Recommended)
 
@@ -369,7 +369,7 @@ config/locales/
 
 **Load nested directories:** `config.i18n.load_path += Dir[Rails.root.join("config", "locales", "**", "*.{rb,yml}")]`
 
-**YAML rules:** Top-level key = locale. Keys are snake_case. Quote `'true'`/`'false'`/`'yes'`/`'no'`/`'on'`/`'off'` as keys. Keep nesting ≤ 4 levels.
+**YAML rules:** Top-level key = locale. Keys are snake_case. Quote `'true'`/`'false'`/`'yes'`/`'no'`/`'on'`/`'off'` as keys (YAML parses them as booleans otherwise). Keep nesting ≤ 4 levels.
 
 ### Step 8: Action Mailer Translations
 
@@ -406,11 +406,11 @@ config.i18n.fallbacks = { es: :en, fr: :en }   # Or specific chains
 1. **Hardcoding strings** — `"Record saved"` instead of `t(".success")`
 2. **Wrong YAML nesting** — Forgetting locale key at top level, wrong indentation
 3. **Not using lazy lookups** — `t("users.show.title")` instead of `t(".title")` in views/controllers
-4. **Forgetting `available_locales`** — Must whitelist valid locales
-5. **Using `I18n.locale =`** — Leaks across requests; use `I18n.with_locale`
+4. **Forgetting `available_locales`** — Without it, arbitrary locale strings are accepted (security risk)
+5. **Using `I18n.locale =`** — Leaks across requests in threaded servers; use `I18n.with_locale`
 6. **Pluralization without `count`** — Returns raw hash instead of string
 7. **Missing `_html` suffix** — HTML in translations gets escaped without it
-8. **Not quoting YAML booleans** — `true`, `false`, `yes`, `no` must be quoted as keys
+8. **Not quoting YAML booleans** — `true`, `false`, `yes`, `no` are parsed as booleans; quote them when used as keys
 9. **Forgetting to restart server** — New locale files require restart to load
 
 ## Quick Reference
@@ -472,4 +472,10 @@ en:
 - [ ] Test with `raise_on_missing_translations = true`
 - [ ] Add locale switcher UI + update `default_url_options` if URL-based
 
-For detailed patterns, examples, and edge cases, see `reference.md` in this skill directory.
+For detailed patterns, examples, and edge cases, see the `references/` directory:
+- `references/lookups.md` — Translation lookup methods, interpolation, lazy lookups
+- `references/locale-files.md` — YAML patterns, file organization, date/time/number localization, custom backends
+- `references/pluralization.md` — Pluralization rules by language
+- `references/model-translations.md` — Active Record model/attribute/error translations
+- `references/locale-switching.md` — Locale switching strategies and fallback configuration
+- `references/testing.md` — Testing I18n, common gems (rails-i18n, i18n-tasks, mobility)

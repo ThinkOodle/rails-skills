@@ -8,6 +8,14 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash(bin/rails assets:*), Bash(bin
 
 Manage assets in Rails 8+ applications using Propshaft — the modern, minimal asset pipeline that serves files directly without compilation or bundling.
 
+## When To Use This Skill
+
+- Setting up or organizing assets in a Rails 8+ app
+- Migrating from Sprockets to Propshaft
+- Fixing broken asset paths, missing stylesheets, or fingerprinting issues
+- Configuring CDN, import maps, or asset precompilation
+- Organizing CSS/JS file structure with Propshaft conventions
+
 ## Critical Mental Model
 
 **Propshaft is NOT Sprockets.** Stop thinking in Sprockets patterns immediately:

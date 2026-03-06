@@ -8,6 +8,14 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash(bin/rails *), Bash(bundle exe
 
 Build correct, modern forms in Rails 8 using `form_with` and associated helpers.
 
+## When To Use This Skill
+
+- Building any form in a Rails view (form_with, nested forms, selects, checkboxes)
+- Adding nested attributes with fields_for and accepts_nested_attributes_for
+- Choosing the right form helper (text_field, select, collection_select, etc.)
+- Building custom form builders
+- Integrating forms with Stimulus controllers
+
 ## The One Rule
 
 **`form_with` is the ONLY form helper you use. Period.**

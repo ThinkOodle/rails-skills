@@ -2,6 +2,19 @@
 
 Detailed patterns, examples, edge cases, and migration guide for the Propshaft asset pipeline.
 
+## Table of Contents
+- [How Propshaft Works Internally](#how-propshaft-works-internally)
+- [Detailed @layer Patterns](#detailed-layer-patterns)
+- [Complete Design Tokens Example](#complete-design-tokens-example)
+- [Complete Layout Example](#complete-layout-example)
+- [Configuration Reference](#configuration-reference)
+- [Asset Helper Reference](#asset-helper-reference)
+- [Integrating with Bundlers](#integrating-with-bundlers)
+- [Action Text Integration](#action-text-integration)
+- [Edge Cases and Gotchas](#edge-cases-and-gotchas)
+- [Migration from Sprockets — Complete Checklist](#migration-from-sprockets--complete-checklist)
+- [Rails Commands Reference](#rails-commands-reference)
+
 ## How Propshaft Works Internally
 
 ### Asset Resolution Chain

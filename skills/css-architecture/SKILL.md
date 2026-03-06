@@ -482,4 +482,10 @@ Fallback for older browsers:
 - [ ] Spacing follows the existing scale
 - [ ] Token names are semantic (`--color-surface`, not `--color-white`)
 
-For detailed patterns, examples, edge cases, and the full color palette, see `reference.md` in this skill directory.
+For detailed patterns and examples, see the `references/` directory:
+- `references/design-tokens.md` — Full color palette (OKLCH), spacing, typography, naming conventions
+- `references/components.md` — Button, card, badge, alert, form, table patterns + Rails integration
+- `references/dark-mode.md` — `light-dark()` deep dive, manual toggle, shadows, `color-mix()`
+- `references/responsive.md` — Mobile-first breakpoints, container queries, fluid typography, layout patterns
+- `references/layers.md` — `@layer` cascade control, anti-patterns, third-party CSS
+- `references/utilities.md` — Complete recommended utility class set

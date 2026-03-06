@@ -225,7 +225,7 @@ lexxy-editor,
 }
 ```
 
-See `reference.md` for the full list of Lexxy CSS variables.
+See `references/editors.md` for the full list of Lexxy CSS variables.
 
 #### Trix (Rails 6–8.0)
 

@@ -2,6 +2,24 @@
 
 Detailed patterns, column types, edge cases, and advanced examples for Active Record migrations in Rails 8.1.
 
+## Table of Contents
+- [Column Types Reference](#column-types-reference)
+- [Table Creation Patterns](#table-creation-patterns)
+- [Index Patterns](#index-patterns)
+- [Foreign Key Patterns](#foreign-key-patterns)
+- [Column Change Patterns](#column-change-patterns)
+- [Check Constraints (Rails 6.1+)](#check-constraints-rails-61)
+- [Enum Columns (PostgreSQL)](#enum-columns-postgresql)
+- [Polymorphic Associations](#polymorphic-associations)
+- [change_table (Batch Changes)](#change_table-batch-changes)
+- [Reversible Pattern Cookbook](#reversible-pattern-cookbook)
+- [Data Migration Patterns](#data-migration-patterns)
+- [Multi-Database Patterns](#multi-database-patterns)
+- [DDL Transactions](#ddl-transactions)
+- [Schema Management](#schema-management)
+- [Troubleshooting](#troubleshooting)
+- [Anti-Patterns](#anti-patterns)
+
 ## Column Types Reference
 
 ### Standard Types

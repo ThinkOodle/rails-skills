@@ -268,20 +268,15 @@ bin/rails solid_cable:install
 
 This sets up `config/cable.yml` and creates `db/cable_schema.rb`. Update `config/database.yml` to add the cable database.
 
-**config/cable.yml options:**
+**config/cable.yml — quick setup:**
 
 ```yaml
-# Development — in-process, no external deps
 development:
   adapter: async
 
-# Test — use test adapter
 test:
   adapter: test
 
-# Production — choose ONE:
-
-# Option A: Solid Cable (database-backed, simplest)
 production:
   adapter: solid_cable
   connects_to:
@@ -289,27 +284,9 @@ production:
       writing: cable
   polling_interval: 0.1.seconds
   message_retention: 1.day
-
-# Option B: Redis (battle-tested, highest throughput)
-production:
-  adapter: redis
-  url: <%= ENV.fetch("REDIS_URL", "redis://localhost:6379/1") %>
-  channel_prefix: myapp_production
-
-# Option C: PostgreSQL (uses NOTIFY, 8KB payload limit)
-production:
-  adapter: postgresql
 ```
 
-**Adapter comparison:**
-
-| Adapter | Best For | Tradeoffs |
-|---------|----------|-----------|
-| `async` | Development only | Single process, no persistence |
-| `solid_cable` | Most production apps | No Redis dependency, slightly higher latency |
-| `redis` | High-throughput apps | External dependency, fastest |
-| `postgresql` | Already using PG, low volume | 8KB payload limit |
-| `test` | Test environment | Stores broadcasts for assertions |
+**Adapter options:** Solid Cable (default, database-backed), Redis (highest throughput), PostgreSQL (8KB payload limit). See `references/adapters-config.md` for full adapter comparison and configuration examples.
 
 ### Step 8: Production Configuration
 
@@ -378,77 +355,21 @@ disconnected() {
 **Channel test (unit):**
 
 ```ruby
-# test/channels/chat_channel_test.rb
-require "test_helper"
-
 class ChatChannelTest < ActionCable::Channel::TestCase
-  setup do
-    @room = rooms(:general)
-  end
-
   test "subscribes to room stream" do
-    subscribe room_id: @room.id
+    subscribe room_id: rooms(:general).id
     assert subscription.confirmed?
-    assert_has_stream "chat_#{@room.id}"
-  end
-
-  test "subscribes with stream_for" do
-    subscribe room_id: @room.id
-    assert_has_stream_for @room
+    assert_has_stream "chat_#{rooms(:general).id}"
   end
 
   test "rejects without room_id" do
     subscribe room_id: nil
     assert subscription.rejected?
   end
-
-  test "speak creates message" do
-    subscribe room_id: @room.id
-    assert_difference "Message.count", 1 do
-      perform :speak, body: "Hello!"
-    end
-  end
 end
 ```
 
-**Connection test:**
-
-```ruby
-# test/channels/application_cable/connection_test.rb
-require "test_helper"
-
-class ApplicationCable::ConnectionTest < ActionCable::Connection::TestCase
-  setup do
-    @user = users(:active_user)
-  end
-
-  test "connects with valid cookie" do
-    connect cookies: { user_id: @user.id }
-    assert_equal @user, connection.current_user
-  end
-
-  test "rejects without cookie" do
-    assert_reject_connection { connect }
-  end
-end
-```
-
-**Broadcast assertions in integration tests:**
-
-```ruby
-test "creating message broadcasts to room" do
-  assert_broadcast_on("chat_#{@room.id}", { html: /Hello/ }) do
-    post messages_path, params: { message: { body: "Hello", room_id: @room.id } }
-  end
-end
-
-# Or just check that a broadcast happened
-test "notifies user" do
-  assert_broadcasts("notifications_#{@user.id}", 1) do
-    NotificationService.notify(@user, "New message")
-  end
-end
-```
+See `references/testing.md` for connection tests, `stream_for` assertions, and broadcast assertion patterns.
 
 ## Quick Reference
 
@@ -507,39 +428,7 @@ ActionCable.logger.enabled = true
 
 ### Stimulus + Action Cable Pattern
 
-```js
-// app/javascript/controllers/chat_controller.js
-import { Controller } from "@hotwired/stimulus"
-import consumer from "../channels/consumer"
-
-export default class extends Controller {
-  static targets = ["messages", "input"]
-  static values = { roomId: Number }
-
-  connect() {
-    this.channel = consumer.subscriptions.create(
-      { channel: "ChatChannel", room_id: this.roomIdValue },
-      {
-        received: this.received.bind(this),
-        connected: () => console.log("Chat connected"),
-      }
-    )
-  }
-
-  disconnect() {
-    this.channel?.unsubscribe()
-  }
-
-  received(data) {
-    this.messagesTarget.insertAdjacentHTML("beforeend", data.html)
-  }
-
-  send() {
-    this.channel.perform("speak", { body: this.inputTarget.value })
-    this.inputTarget.value = ""
-  }
-}
-```
+See `references/client-side.md` for the full Stimulus + Action Cable integration pattern with controller example.
 
 ## Anti-Patterns to Avoid
 
@@ -589,4 +478,11 @@ curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" \
   http://localhost:3000/cable
 ```
 
-See `reference.md` in this skill directory for detailed patterns, edge cases, and advanced configurations.
+See the `references/` directory for detailed patterns, edge cases, and advanced configurations:
+- `references/connection-auth.md` — Authentication patterns (Devise, token, JWT, multi-identifier)
+- `references/channels.md` — Channel patterns, callbacks, dynamic streams
+- `references/broadcasting.md` — Broadcasting from models, controllers, targeted/conditional
+- `references/client-side.md` — Stimulus integration, reconnection, Turbo Streams comparison
+- `references/adapters-config.md` — Solid Cable, Redis, PostgreSQL config, deployment
+- `references/testing.md` — Channel, connection, broadcast, and system test patterns
+- `references/patterns.md` — Presence, typing indicators, progress tracking, error handling, security

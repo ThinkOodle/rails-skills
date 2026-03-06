@@ -2,6 +2,18 @@
 
 Detailed patterns, complete examples, and edge cases for Stimulus controllers in Rails.
 
+## Table of Contents
+- [Data Attribute Naming Rules](#data-attribute-naming-rules)
+- [Controller Patterns](#controller-patterns)
+- [Lifecycle Deep Dive](#lifecycle-deep-dive)
+- [Outlets In Depth](#outlets-in-depth)
+- [Working with Turbo](#working-with-turbo)
+- [Rails View Helpers and Stimulus](#rails-view-helpers-and-stimulus)
+- [Advanced Patterns](#advanced-patterns)
+- [Import Maps vs. Bundler](#import-maps-vs-bundler)
+- [Testing Stimulus Controllers](#testing-stimulus-controllers)
+- [Troubleshooting Checklist](#troubleshooting-checklist)
+
 ## Data Attribute Naming Rules
 
 This is the single most error-prone area. Memorize these rules.

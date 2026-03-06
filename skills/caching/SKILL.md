@@ -103,7 +103,7 @@ The key includes:
 <% end %>
 ```
 
-**⚠️ CRITICAL: Never cache content that varies by user without including the user in the key.** This is the #1 agent mistake — caching a "Welcome, Ryan" fragment and serving it to everyone.
+**Include the user in the cache key when content varies by user.** Without it, you'll cache "Welcome, Ryan" and serve it to every visitor — this is the most common caching mistake.
 
 ### Step 4: Use Collection Caching for Lists
 
@@ -148,7 +148,7 @@ Russian doll = nested cache fragments where inner cache busting propagates outwa
 <% end %>
 ```
 
-**The models — `touch: true` is mandatory:**
+**The models — `touch: true` propagates cache invalidation up the chain:**
 
 ```ruby
 class Category < ApplicationRecord
@@ -162,7 +162,7 @@ end
 
 When a product updates → its `updated_at` changes → `touch: true` updates category's `updated_at` → both cache fragments expire.
 
-**⚠️ CRITICAL: Without `touch: true`, the outer cache will serve stale data.** This is the #2 most common agent mistake. Every `belongs_to` in a Russian doll chain MUST have `touch: true`.
+**Without `touch: true`, the outer cache serves stale data** — updating a product won't change the category's `updated_at`, so the category fragment never expires. Every `belongs_to` in a Russian doll chain needs `touch: true`.
 
 **Multi-level touch chains:**
 
@@ -198,17 +198,17 @@ end
 
 **Key rules for low-level caching:**
 
-1. **Always use `cache_key_with_version` for AR records** — auto-invalidates on update
-2. **Always set `expires_in`** — unbounded caches are bugs waiting to happen
-3. **Never cache Active Record objects** — cache IDs or primitives instead
+1. **Use `cache_key_with_version` for AR records** — it auto-invalidates when the record updates
+2. **Set `expires_in`** — unbounded caches accumulate stale data that's hard to debug
+3. **Cache IDs or primitives, not Active Record objects** — cached AR objects become stale and break on code reloads
 
 ```ruby
-# BAD — caching AR objects (stale data, serialization issues)
+# Avoid — cached AR objects go stale and break on code reloads
 Rails.cache.fetch("super_admins", expires_in: 12.hours) do
   User.super_admins.to_a
 end
 
-# GOOD — cache IDs, re-query fresh
+# Better — cache IDs, re-query fresh
 ids = Rails.cache.fetch("super_admin_ids", expires_in: 12.hours) do
   User.super_admins.pluck(:id)
 end
@@ -334,47 +334,7 @@ default: &default
 - Supports encryption for sensitive cached data
 - Supports sharding for horizontal scaling
 
-#### Redis Cache Store
-
-```ruby
-# Gemfile
-gem "redis"
-
-# config/environments/production.rb
-config.cache_store = :redis_cache_store, { url: ENV["REDIS_URL"] }
-```
-
-Production config with error handling:
-
-```ruby
-config.cache_store = :redis_cache_store, {
-  url: ENV["REDIS_URL"],
-  connect_timeout: 30,
-  read_timeout: 0.2,
-  write_timeout: 0.2,
-  reconnect_attempts: 2,
-  error_handler: ->(method:, returning:, exception:) {
-    Sentry.capture_exception(exception, level: "warning",
-      tags: { method: method, returning: returning })
-  }
-}
-```
-
-**Important:** Use a dedicated Redis instance for caching with `maxmemory-policy allkeys-lfu`. Don't share with Sidekiq/ActionCable.
-
-#### Memory Store (Development Default)
-
-```ruby
-config.cache_store = :memory_store, { size: 64.megabytes }
-```
-
-Not shared between processes — only for development/test.
-
-#### Null Store (Disable Caching)
-
-```ruby
-config.cache_store = :null_store
-```
+**Other stores:** Redis (`:redis_cache_store`), Memory (`:memory_store`), Null (`:null_store`). See `references/cache-stores.md` for Redis production configuration with error handling, and full store comparison.
 
 ### Step 9: Enable Caching in Development
 
@@ -443,13 +403,13 @@ end
 ### 1. Caching User-Specific Content Without User Key
 
 ```erb
-<%# BUG: All users see the same cached content %>
+<%# Wrong: all users see the same cached content %>
 <% cache @dashboard do %>
   Welcome, <%= current_user.name %>!
   <%= render @dashboard.widgets %>
 <% end %>
 
-<%# FIX: Include user in cache key %>
+<%# Fixed: include user in cache key %>
 <% cache [current_user, @dashboard] do %>
   Welcome, <%= current_user.name %>!
   <%= render @dashboard.widgets %>
@@ -459,12 +419,12 @@ end
 ### 2. Missing touch on Associations
 
 ```ruby
-# BUG: Updating a comment doesn't expire the post cache
+# Problem: updating a comment doesn't expire the post cache
 class Comment < ApplicationRecord
   belongs_to :post
 end
 
-# FIX: Add touch
+# Fixed: touch propagates invalidation to parent
 class Comment < ApplicationRecord
   belongs_to :post, touch: true
 end
@@ -473,10 +433,10 @@ end
 ### 3. Caching Active Record Objects
 
 ```ruby
-# BUG: Cached AR objects become stale, break on code reload
+# Problem: cached AR objects become stale and break on code reload
 Rails.cache.fetch("featured") { Product.featured.to_a }
 
-# FIX: Cache IDs
+# Fixed: cache IDs, re-query fresh
 ids = Rails.cache.fetch("featured_ids", expires_in: 1.hour) { Product.featured.pluck(:id) }
 Product.where(id: ids)
 ```
@@ -484,41 +444,14 @@ Product.where(id: ids)
 ### 4. No Expiration on Low-Level Cache
 
 ```ruby
-# BUG: Cache lives forever, data gets stale
+# Problem: cache lives forever, exchange rates go stale silently
 Rails.cache.fetch("exchange_rates") { ExchangeRateAPI.current }
 
-# FIX: Always set expires_in
+# Fixed: set expires_in so data refreshes
 Rails.cache.fetch("exchange_rates", expires_in: 1.hour) { ExchangeRateAPI.current }
 ```
 
-### 5. Cache Key Doesn't Capture All Dependencies
-
-```erb
-<%# BUG: Cache doesn't expire when locale or currency changes %>
-<% cache product do %>
-  <%= product.name %> — <%= number_to_currency(product.price) %>
-<% end %>
-
-<%# FIX: Include all varying dimensions in the key %>
-<% cache [I18n.locale, product] do %>
-  <%= product.name %> — <%= number_to_currency(product.price) %>
-<% end %>
-```
-
-### 6. Forgetting Cache Digests for Helper Dependencies
-
-```erb
-<%# BUG: Changing render_stars helper doesn't expire cache %>
-<% cache product do %>
-  <%= render_stars(product.rating) %>
-<% end %>
-
-<%# FIX: Add explicit dependency comment %>
-<%# Helper Dependency Updated: 2026-03-01 %>
-<% cache product do %>
-  <%= render_stars(product.rating) %>
-<% end %>
-```
+See `references/fragment-caching.md` for additional common mistakes including cache key dependency issues and helper digest gotchas.
 
 ## Quick Reference: Cache Key Methods
 
@@ -531,4 +464,10 @@ Rails.cache.fetch("exchange_rates", expires_in: 1.hour) { ExchangeRateAPI.curren
 
 ## Reference
 
-For detailed patterns, edge cases, cache store comparisons, and advanced configuration, see [reference.md](reference.md).
+For detailed patterns, edge cases, and advanced configuration, see the `references/` directory:
+- `references/fragment-caching.md` — Cache keys, composite keys, collection caching, dependencies
+- `references/russian-doll.md` — Nested caching, touch propagation, counter caches
+- `references/low-level-caching.md` — Rails.cache.fetch, fetch_multi, atomic operations
+- `references/conditional-get.md` — stale?, fresh_when, ETags, HTTP caching
+- `references/cache-stores.md` — Store comparison, Solid Cache, Redis, Memcached config
+- `references/performance.md` — N+1 cache calls, warming, stampede prevention, debugging

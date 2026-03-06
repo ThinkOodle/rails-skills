@@ -2,6 +2,22 @@
 
 Detailed patterns, examples, edge cases, and the complete API reference for Active Record callbacks in Rails 8.1.
 
+## Table of Contents
+- [Complete Lifecycle Order](#complete-lifecycle-order)
+- [Methods That Trigger Callbacks](#methods-that-trigger-callbacks)
+- [Registration Patterns](#registration-patterns)
+- [Conditional Callbacks](#conditional-callbacks)
+- [Transaction Callbacks In Depth](#transaction-callbacks-in-depth)
+- [Halting the Callback Chain](#halting-the-callback-chain)
+- [Association Callbacks](#association-callbacks)
+- [Cascading Callbacks via `dependent:`](#cascading-callbacks-via-dependent)
+- [Suppressing Callbacks](#suppressing-callbacks)
+- [Dirty Tracking in Callbacks](#dirty-tracking-in-callbacks)
+- [Common Patterns](#common-patterns)
+- [Testing Callbacks](#testing-callbacks)
+- [Debugging Callbacks](#debugging-callbacks)
+- [Decision Framework](#decision-framework)
+
 ## Complete Lifecycle Order
 
 ### Creating (`User.create` / `User.new` + `save`)

@@ -29,8 +29,8 @@ Need a record by attributes?
   → find_by(email: "x@y.com")  # Returns nil — good for "maybe exists" cases
   → find_by!(email: "x@y.com") # Raises — good for "must exist" cases
 
-DON'T use:
-  → where(email: "x").first    # Wasteful — find_by exists for this
+Avoid:
+  → where(email: "x").first    # Unnecessary — find_by does this in one step
   → where(email: "x").take     # Same thing, less clear intent
 ```
 
@@ -83,11 +83,11 @@ User.where(active: true).exists?
 # OK — but slightly slower (loads the relation first if not already loaded)
 User.where(active: true).any?
 
-# BAD — loads ALL records into Ruby, then checks
-User.where(active: true).present?   # DON'T DO THIS
-User.where(active: true).to_a.any?  # REALLY DON'T DO THIS
+# BAD — loads ALL records into Ruby, then checks (wastes memory + time)
+User.where(active: true).present?
+User.where(active: true).to_a.any?
 
-# BAD — count is heavier than exists? (full table scan vs LIMIT 1)
+# BAD — count scans the full result set; exists? stops at the first match
 User.where(active: true).count > 0  # Use exists? instead
 ```
 
@@ -189,7 +189,7 @@ scope :recently_active, -> { where("last_login > ?", 30.days.ago) }
 
 ## Batching Large Datasets
 
-**Never iterate over large tables with `.each`:**
+**Iterate large tables in batches** — `.each` on an unbounded relation loads the entire result set into memory at once:
 
 ```ruby
 # BAD — loads entire table into memory
@@ -212,11 +212,11 @@ User.in_batches(of: 1000) do |batch_relation|
 end
 ```
 
-**Batching rules:**
+**Batching methods:**
 - `find_each` — yields individual records. Most common.
 - `find_in_batches` — yields arrays of records. For bulk operations on objects.
 - `in_batches` — yields Relations. For bulk SQL operations (update_all, delete_all).
-- All three sort by primary key internally. **Cannot combine with custom `.order()`.**
+- All three sort by primary key internally. They can't be combined with custom `.order()` because batching relies on PK ordering to paginate.
 
 ## Joins
 
@@ -293,7 +293,7 @@ Post.where(author: { active: true })  # Only with joins/includes
 User.where("email LIKE ?", "%#{User.sanitize_sql_like(query)}%")
 User.where("created_at > :date", date: 1.week.ago)
 
-# NEVER do this — SQL injection
+# NEVER do this — SQL injection lets attackers read/modify your entire database
 User.where("email = '#{params[:email]}'")  # VULNERABLE!
 ```
 
@@ -358,8 +358,8 @@ order.shipped!         # UPDATE ... SET status = 2
 Order.where(status: :shipped)
 Order.where(status: [:shipped, :delivered])
 
-# DON'T use integers directly
-Order.where(status: 2)  # Fragile — use the symbol
+# Avoid raw integers — if enum values shift, queries silently break
+Order.where(status: 2)  # Use the symbol instead
 ```
 
 ## Common Anti-Patterns
@@ -482,4 +482,11 @@ assert_no_queries { cached_result }
 | Find or create | `find_or_create_by(name: "x")` | Record |
 | Find or init | `find_or_initialize_by(name: "x")` | Record (maybe unsaved) |
 
-See `reference.md` in this skill directory for detailed patterns, advanced examples, and edge cases.
+For detailed patterns, advanced examples, and edge cases, see the `references/` directory:
+- `references/finders.md` — Finder methods, where conditions, ordering, select/pluck, enums
+- `references/joins-and-includes.md` — Joins, eager loading (includes/preload/eager_load), strict_loading
+- `references/scopes.md` — Scope patterns, overriding conditions, method chaining, query objects
+- `references/batching.md` — find_each, find_in_batches, in_batches
+- `references/calculations.md` — Grouping, aggregations, existence checks, locking
+- `references/raw-sql.md` — Safe raw SQL patterns (find_by_sql, select_all, sanitization)
+- `references/performance.md` — Performance patterns, Rails 8.1 features, full method index

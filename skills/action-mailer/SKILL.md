@@ -11,12 +11,12 @@ Create, configure, and deliver emails from Rails applications using Action Maile
 ## Philosophy
 
 **Core Principles:**
-1. **Always `deliver_later`** — Queue emails via Active Job by default. `deliver_now` blocks the request.
-2. **Always create BOTH templates** — Every email needs `action.html.erb` AND `action.text.erb`. No exceptions.
-3. **Use parameterized mailers** — Pass context via `with()`, not method arguments. It's the Rails way.
-4. **Set `default from:`** — Every mailer must have a default sender. Missing `from:` = broken emails.
-5. **Write previews** — Every mailer action gets a preview class. Non-negotiable for development workflow.
-6. **Use `_url` helpers, never `_path`** — Emails have no request context. Relative paths break.
+1. **Default to `deliver_later`** — Queues emails via Active Job. `deliver_now` blocks the HTTP request, making users wait for SMTP round-trips.
+2. **Create both HTML and text templates** — Some email clients block HTML, and spam filters penalize HTML-only emails. Always provide a text fallback.
+3. **Use parameterized mailers** — Pass context via `with()`, not method arguments. This makes callbacks and shared setup work cleanly.
+4. **Set `default from:`** — Every mailer needs a default sender. Without it, emails fail silently or get rejected by mail servers.
+5. **Write previews** — Preview classes let you iterate on email design without sending real emails or writing test data by hand.
+6. **Use `_url` helpers, not `_path`** — Emails have no request context, so relative paths produce broken links. `_url` generates absolute URLs.
 
 ## When To Use This Skill
 
@@ -33,7 +33,7 @@ Create, configure, and deliver emails from Rails applications using Action Maile
 
 ### Step 1: Check Existing Mailer Patterns
 
-**ALWAYS check the project first:**
+**Check the project first** — match existing mailer patterns for consistency:
 
 ```bash
 # Find existing mailers
@@ -53,7 +53,7 @@ grep -r "action_mailer" config/environments/
 ls test/mailers/previews/
 ```
 
-**Match existing project conventions** — consistency trumps "best practice".
+**Consistency with the existing codebase matters more than theoretical best practice.**
 
 ### Step 2: Generate or Create the Mailer
 
@@ -115,16 +115,16 @@ class UserMailer < ApplicationMailer
 end
 ```
 
-**Calling the mailer — ALWAYS use `deliver_later`:**
+**Calling the mailer — prefer `deliver_later`:**
 
 ```ruby
-# CORRECT — async via Active Job
+# Preferred — async via Active Job (user doesn't wait for SMTP)
 UserMailer.with(user: @user).welcome_email.deliver_later
 
-# CORRECT — with params
+# With params
 UserMailer.with(user: @user, token: @token).password_reset.deliver_later
 
-# AVOID — blocks the request/response cycle
+# Synchronous — blocks the request while talking to SMTP server
 UserMailer.with(user: @user).welcome_email.deliver_now
 ```
 
@@ -132,7 +132,7 @@ UserMailer.with(user: @user).welcome_email.deliver_now
 
 ### Step 4: Create BOTH Templates
 
-**ALWAYS create both HTML and text versions.** Action Mailer auto-generates `multipart/alternative` emails.
+**Create both HTML and text versions.** Action Mailer auto-generates `multipart/alternative` emails when both exist.
 
 **HTML template** (`app/views/user_mailer/welcome_email.html.erb`):
 
@@ -160,7 +160,7 @@ Log in: <%= @login_url %>
 
 ### Step 5: Configure URL Host
 
-**Emails need absolute URLs. Set the host:**
+**Emails need absolute URLs** because there's no browser request context to resolve relative paths against:
 
 ```ruby
 # config/environments/development.rb
@@ -170,7 +170,7 @@ config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 config.action_mailer.default_url_options = { host: "www.example.com", protocol: "https" }
 ```
 
-**In templates, use `_url` helpers only:**
+**In templates, use `_url` helpers:**
 
 ```erb
 <%# CORRECT %>
@@ -182,7 +182,7 @@ config.action_mailer.default_url_options = { host: "www.example.com", protocol: 
 
 ### Step 6: Write Mailer Previews
 
-**Every mailer action needs a preview:**
+**Write a preview for each mailer action** — this lets you iterate on design at `/rails/mailers` without sending real emails:
 
 ```ruby
 # test/mailers/previews/user_mailer_preview.rb
@@ -199,11 +199,9 @@ class UserMailerPreview < ActionMailer::Preview
 end
 ```
 
-**View previews at:** `http://localhost:3000/rails/mailers`
-
 **Preview tips:**
 - Use `User.first` with a fallback `User.new(...)` so previews work even with empty DB
-- Don't call `deliver_later` in previews — just return the mail object
+- Just return the mail object — don't call `deliver_later` in previews
 - Previews auto-reload on template changes
 
 ### Step 7: Write Mailer Tests
@@ -451,26 +449,36 @@ end
 # Call with: InvitationsMailer.with(inviter: user, invitee: other).account_invitation.deliver_later
 ```
 
+## Detailed References
+
+For deeper patterns and examples, see the `references/` directory:
+- `references/templates.md` — Mailer class patterns, HTML/text templates, attachments, I18n, layouts
+- `references/delivery.md` — SMTP configuration, per-environment setup, error handling
+- `references/testing.md` — Mailer test patterns, delivery assertions, integration tests
+- `references/interceptors.md` — Callbacks, interceptors, observers, delivery lifecycle
+- `references/previews.md` — Preview classes, fallback data, custom preview paths
+- `references/configuration.md` — Edge cases, gotchas, production recipes
+
 ## Common Agent Mistakes
 
-1. **Using `deliver_now` instead of `deliver_later`** — Always default to async delivery
-2. **Creating only HTML template** — Always create both `.html.erb` and `.text.erb`
-3. **Missing `default from:` address** — Every mailer needs a sender
-4. **Using `_path` helpers in templates** — Use `_url` helpers (emails lack request context)
-5. **Passing args instead of using `with()`** — Use parameterized mailers: `Mailer.with(user: @user).action`
-6. **Forgetting to set `default_url_options`** — URLs in emails will break without host config
-7. **Not writing previews** — Every mailer action needs a preview for development
+1. **Using `deliver_now` instead of `deliver_later`** — Blocks the HTTP request while waiting for SMTP; users experience slow page loads
+2. **Creating only HTML template** — Spam filters penalize HTML-only emails, and some clients block HTML entirely
+3. **Missing `default from:` address** — Mail servers reject emails without a sender, often silently
+4. **Using `_path` helpers in templates** — Produces relative URLs that break in email clients (no request context to resolve against)
+5. **Passing args instead of using `with()`** — Parameterized mailers (`Mailer.with(user: @user).action`) work cleanly with callbacks and shared setup
+6. **Forgetting to set `default_url_options`** — `_url` helpers raise errors or produce `localhost` links in production without host config
+7. **Not writing previews** — Without previews, you're sending real emails or writing tests just to see what an email looks like
 8. **Not configuring delivery method per environment** — `:test` for test, `:letter_opener` for dev, `:smtp` for prod
 
 ## Anti-Patterns to Avoid
 
-1. **Fat mailers** — Keep business logic in models/services, not mailer classes
-2. **Inline styles in templates** — Use a mailer layout with shared styles; consider `premailer-rails`
-3. **Hardcoded URLs** — Always use route helpers with `_url` suffix
-4. **No text fallback** — HTML-only emails hurt deliverability and accessibility
-5. **Synchronous delivery in controllers** — `deliver_now` in a request blocks the user
+1. **Fat mailers** — Keep business logic in models/services. Mailers should just assemble and send; logic in mailers is hard to test and reuse
+2. **Inline styles in templates** — Use a mailer layout with shared styles; consider `premailer-rails` to auto-inline CSS for email client compatibility
+3. **Hardcoded URLs** — Route helpers with `_url` suffix stay correct when routes change; hardcoded strings rot
+4. **No text fallback** — HTML-only emails hurt deliverability scores and are inaccessible to screen readers
+5. **Synchronous delivery in controllers** — `deliver_now` in a request makes users wait for SMTP round-trips
 6. **Untested mailers** — Test content, recipients, subject, and delivery count
-7. **Secrets in mailer views** — Never expose tokens/passwords; use short-lived, hashed links
+7. **Secrets in mailer views** — Never expose tokens/passwords in emails; use short-lived, hashed links instead
 
 ## File Structure
 

@@ -12,7 +12,7 @@ Use the right generator with the right flags. Generate exactly what you need —
 
 **Core Principles:**
 1. **Generate the minimum** — Use `model` when you need a model, not `scaffold`. Use `migration` when you need a migration, not `model`.
-2. **Skip what you won't use** — Always pass `--no-helper`, `--no-assets`, `--no-jbuilder` unless explicitly needed.
+2. **Skip what you won't use** — Pass `--no-helper`, `--no-assets`, `--no-jbuilder` unless explicitly needed (or configure defaults in `config.generators`).
 3. **Know your generators** — Rails has 30+ built-in generators. Learn them before writing code by hand.
 4. **Check project defaults first** — Read `config/application.rb` for `config.generators` before running anything.
 5. **Destroy before regenerating** — Use `bin/rails destroy` to cleanly undo a generator before re-running with different options.
@@ -30,7 +30,7 @@ Use the right generator with the right flags. Generate exactly what you need —
 
 ### Step 1: Check Project Generator Config
 
-**ALWAYS check existing generator configuration first:**
+**Check existing generator configuration first** — the project may already skip helpers, use UUIDs, or set other defaults:
 
 ```bash
 # Check for custom generator config
@@ -43,7 +43,7 @@ bin/rails generate --help
 bin/rails generate model --help
 ```
 
-**Match project conventions.** If the project disables helpers or uses UUIDs, your generators should too.
+Match project conventions. If the project disables helpers or uses UUIDs, your generators should too.
 
 ### Step 2: Choose the Right Generator
 
@@ -99,7 +99,7 @@ tags:jsonb           # JSON column (PostgreSQL)
 
 ### Step 4: Run with --pretend First
 
-**For any generator that creates multiple files, dry-run first:**
+**For any generator that creates multiple files, dry-run first** — it's easier to verify than to clean up:
 
 ```bash
 # See what would be created without creating it
@@ -332,21 +332,21 @@ Rails checks `lib/templates/` before its own templates. No config needed.
 
 ## Common Agent Mistakes
 
-1. **Using `scaffold` when `model` suffices** — Scaffold creates controller, views, routes, helpers, tests. If you only need a model, use `model`.
+1. **Using `scaffold` when `model` suffices** — Scaffold creates controller, views, routes, helpers, and tests. If you only need a model, use `model` — less cleanup, less noise.
 
-2. **Forgetting `--no-helper`** — Helpers are rarely used in modern Rails. Skip them unless explicitly needed.
+2. **Forgetting `--no-helper`** — Helper files are rarely used in modern Rails. Generating them just adds clutter.
 
-3. **Not checking `--pretend` output** — Always dry-run complex generators to verify what they create.
+3. **Skipping `--pretend`** — Dry-running complex generators takes a second and prevents generating files you'll have to manually clean up.
 
-4. **Writing migrations by hand** — Use `bin/rails g migration` with naming conventions. Rails generates the body automatically for Add/Remove/CreateJoinTable patterns.
+4. **Writing migrations by hand** — `bin/rails g migration` with naming conventions (AddXxxToYyy, RemoveXxxFromYyy) auto-generates the body. Save the typing.
 
-5. **Generating then manually deleting files** — Use `bin/rails destroy` instead. It cleanly reverts route additions, removes files, etc.
+5. **Generating then manually deleting files** — Use `bin/rails destroy` instead. It cleanly reverts route additions and removes all generated files.
 
-6. **Not knowing about `scaffold_controller`** — When you have a model but need the controller+views, use `scaffold_controller` instead of `scaffold` (which would try to create the model again).
+6. **Not knowing about `scaffold_controller`** — When you have a model but need controller+views, use `scaffold_controller`. Running `scaffold` would try to recreate the model.
 
-7. **Ignoring project defaults** — If `config.generators` already sets `helper: false`, passing `--no-helper` is redundant (but harmless).
+7. **Ignoring project defaults** — Check `config.generators` first. The project may already skip helpers, making `--no-helper` redundant.
 
-8. **Creating custom generators for one-offs** — Only create custom generators for patterns you'll repeat 3+ times.
+8. **Creating custom generators for one-offs** — Custom generators pay off when you repeat a pattern 3+ times. For one-offs, just write the files.
 
 ## Performance Tips
 
@@ -393,3 +393,12 @@ find $(bundle show railties)/lib/rails/generators -name "*.tt" | head -20
 # Check current generator config
 grep -A 20 "config.generators" config/application.rb
 ```
+
+## Detailed Reference
+
+See the `references/` directory for complete examples and edge cases:
+- `references/built-in-generators.md` — All built-in generators with flags, files created, and customizing defaults
+- `references/custom-generators.md` — Creating custom generators, hooks/composition, resolution order
+- `references/templates.md` — Overriding built-in templates, application templates for `rails new`
+- `references/thor-actions.md` — Thor file manipulation methods (create_file, inject_into_file, gsub_file, etc.)
+- `references/testing.md` — Generator testing, edge cases (STI, UUID, namespaces), recipes, troubleshooting

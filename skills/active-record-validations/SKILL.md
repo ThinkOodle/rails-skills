@@ -18,7 +18,7 @@ Write correct, layered validations for Rails 8.1 applications. Pair every model 
 
 ## Critical Rules — Read These First
 
-### ALWAYS pair validations with DB constraints
+### Pair validations with DB constraints
 
 ```ruby
 # Model
@@ -26,7 +26,7 @@ class User < ApplicationRecord
   validates :email, presence: true, uniqueness: true
 end
 
-# Migration — MUST exist or your validation is a lie
+# Migration — without this, anything that bypasses Active Record (bulk imports, raw SQL, other apps) can insert invalid data
 class CreateUsers < ActiveRecord::Migration[8.1]
   def change
     create_table :users do |t|
@@ -49,10 +49,10 @@ end
 | `inclusion: { in: %w[a b c] }` | `CHECK` constraint or enum type |
 | `length: { maximum: 255 }` | `limit: 255` on column |
 
-### NEVER rely on uniqueness validation alone
+### Uniqueness validation alone is a race condition
 
 ```ruby
-# This WILL produce duplicates under concurrent requests:
+# Two concurrent requests can both pass validation and insert duplicates:
 validates :slug, uniqueness: true
 # Without: add_index :posts, :slug, unique: true
 
@@ -66,7 +66,7 @@ rescue ActiveRecord::RecordNotUnique
 end
 ```
 
-### ALWAYS normalize before validating
+### Normalize before validating
 
 ```ruby
 class User < ApplicationRecord
@@ -145,11 +145,11 @@ validates :email, uniqueness: { conditions: -> { where(deleted_at: nil) } }
 #### format
 
 ```ruby
-# ALWAYS use \A and \z, NEVER ^ and $
+# Use \A and \z for string boundaries, not ^ and $
 validates :username, format: { with: /\A[a-z0-9_]+\z/ }
 
-# ^ and $ match line boundaries, not string boundaries.
-# "valid\nevil" would pass /^[a-z]+$/ — this is a security hole.
+# ^ and $ match LINE boundaries in Ruby, not string boundaries.
+# "valid\nevil" passes /^[a-z]+$/ — this is a security hole that enables injection attacks.
 ```
 
 #### numericality
@@ -220,8 +220,9 @@ validates :supplementary_address, absence: true, unless: :has_primary_address?
 has_many :line_items
 validates_associated :line_items  # calls valid? on each line_item
 
-# WARNING: Never put validates_associated on BOTH sides of an association.
-# Parent validates children, never the reverse via validates_associated.
+# Don't put validates_associated on BOTH sides of an association — it creates
+# an infinite loop (parent validates child, child validates parent, etc.).
+# Parent validates children; children rely on belongs_to for the reverse.
 ```
 
 ### Step 3: Conditional Validations
@@ -247,7 +248,7 @@ validates :parking_spot, presence: true,
   unless: -> { remote_employee? }
 ```
 
-**Prefer named methods over complex lambdas.** If your lambda has `&&` or `||`, extract a method.
+**Prefer named methods over complex lambdas** — a method name communicates intent (`paid_with_card?`) better than inline logic, and it's easier to test independently.
 
 #### on: context
 
@@ -287,7 +288,7 @@ class Event < ApplicationRecord
 end
 ```
 
-**Always guard against nil** with `return if field.blank?` — don't let custom validations blow up on empty values. Let `presence` handle that.
+**Guard against nil** with `return if field.blank?` — custom validations receive nil when the field is empty, which causes NoMethodError. Let `presence` handle the "is it present?" check separately.
 
 #### EachValidator (reusable across models)
 
@@ -329,7 +330,7 @@ class Order < ApplicationRecord
 end
 ```
 
-**Warning:** `validates_with` validators are initialized once for the app lifecycle. Don't store instance state.
+**Note:** `validates_with` validators are initialized once for the app lifecycle. Storing instance state causes data to leak between validations of different records.
 
 ### Step 5: Error Handling
 
@@ -407,7 +408,7 @@ end
 # - On finder methods: User.find_by(email: " FOO@BAR.COM ") normalizes the query value
 ```
 
-**Always normalize before you validate.** This prevents duplicates from whitespace/case differences and gives cleaner error messages.
+**Normalize before you validate.** Without this, `" Alice@Example.COM "` and `"alice@example.com"` are treated as different values — leading to duplicates, failed lookups, and confusing error messages.
 
 ## Methods That Skip Validations
 
@@ -467,4 +468,10 @@ validates :email, uniqueness: {
 }
 ```
 
-See `reference.md` for complete examples, edge cases, and i18n configuration.
+See the `references/` directory for complete examples and edge cases:
+- `references/built-in-validators.md` — All built-in validators with options, edge cases, and normalizations
+- `references/custom-validators.md` — EachValidator, Validator classes, PORO validators
+- `references/errors-api.md` — Errors API (reading, adding, filtering) and I18n configuration
+- `references/conditional-validations.md` — if/unless, with_options, :on context, multi-step forms
+- `references/db-constraints.md` — DB constraint pairing, uniqueness race conditions, numericality edge cases
+- `references/testing.md` — Testing patterns, performance considerations, miscellaneous recipes

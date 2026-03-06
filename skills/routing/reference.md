@@ -2,6 +2,26 @@
 
 Detailed patterns, examples, and edge cases for Rails routing. See `SKILL.md` for core guidance.
 
+## Table of Contents
+- [Resources: The Full Picture](#resources-the-full-picture)
+- [Nested Resources](#nested-resources)
+- [Namespace vs Scope: Detailed Comparison](#namespace-vs-scope-detailed-comparison)
+- [Member and Collection Routes: Patterns](#member-and-collection-routes-patterns)
+- [Route Concerns](#route-concerns)
+- [Constraints](#constraints)
+- [Path Helpers: Best Practices](#path-helpers-best-practices)
+- [Redirects](#redirects)
+- [Mounting Engines and Rack Apps](#mounting-engines-and-rack-apps)
+- [Direct and Resolve](#direct-and-resolve)
+- [API Routing Patterns](#api-routing-patterns)
+- [Non-Resourceful Routes](#non-resourceful-routes)
+- [Wildcard / Globbing Routes](#wildcard--globbing-routes)
+- [Breaking Up Large Route Files](#breaking-up-large-route-files)
+- [Route Testing](#route-testing)
+- [Customizing Resources](#customizing-resources)
+- [Common Patterns](#common-patterns)
+- [Edge Cases and Gotchas](#edge-cases-and-gotchas)
+
 ---
 
 ## Resources: The Full Picture

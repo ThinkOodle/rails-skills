@@ -8,6 +8,14 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash(bin/rails *), Bash(bundle exe
 
 Hook into the lifecycle of Active Record objects — but only when it's the right tool.
 
+## When To Use This Skill
+
+- Adding or modifying model callbacks (before_save, after_create, after_commit, etc.)
+- Deciding whether logic belongs in a callback vs a service object
+- Debugging unexpected callback behavior or ordering issues
+- Implementing transaction-safe side effects (after_commit patterns)
+- Halting the callback chain or suppressing callbacks
+
 ## The Golden Rule
 
 **Callbacks are for model-intrinsic concerns ONLY.** If the logic wouldn't make sense as a column default or database constraint, it probably doesn't belong in a callback.

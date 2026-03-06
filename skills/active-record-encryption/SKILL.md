@@ -48,19 +48,19 @@ Just protecting data at rest (logs, backups)?
 
 > **🚨 These are the mistakes agents make most often. Read before writing any code.**
 
-1. **Querying non-deterministic fields** — `Model.find_by(field: value)` ONLY works with `deterministic: true`. Non-deterministic encryption produces different ciphertexts each time. Queries will NEVER match.
+1. **Querying non-deterministic fields** — `Model.find_by(field: value)` only works with `deterministic: true`. Non-deterministic encryption produces different ciphertexts each time, so the database can't match against them.
 
 2. **Forgetting to generate/configure keys** — `encrypts :email` does nothing useful without running `rails db:encryption:init` and storing keys in credentials. You'll get `ActiveRecord::Encryption::Errors::Configuration` errors.
 
 3. **Encrypting fields that need indexing without deterministic mode** — Database indexes on non-deterministic columns are useless. If you need a unique index, use `deterministic: true`.
 
-4. **Not planning for existing data** — Adding `encrypts` to a model with existing rows will break reads unless you enable `support_unencrypted_data`.
+4. **Not planning for existing data** — Adding `encrypts` to a model with existing rows breaks reads because Rails tries to decrypt plaintext values. Enable `support_unencrypted_data` during migration.
 
 5. **Using `ignore_case: true` without adding the column** — This option requires an `original_<column_name>` column in the database. Missing it = crash.
 
-6. **Declaring `serialize` AFTER `encrypts`** — For serialized attributes, `serialize` must come BEFORE `encrypts` in the model. Wrong order = silent failures.
+6. **Declaring `serialize` AFTER `encrypts`** — For serialized attributes, `serialize` must come before `encrypts` in the model. Rails processes these declarations in order, and encryption needs to wrap the already-serialized value.
 
-7. **Trying to rotate keys for deterministic encryption** — Key rotation is NOT supported for deterministic encryption. The same key must produce the same ciphertext.
+7. **Trying to rotate keys for deterministic encryption** — Key rotation isn't supported for deterministic encryption because the same plaintext must always produce the same ciphertext (that's how queries work). Changing the key silently breaks all lookups.
 
 8. **Undersizing string columns** — Encrypted payloads are larger. A `string(255)` email column needs at least `string(510)` when encrypted. See reference.md for sizing guide.
 
@@ -68,7 +68,7 @@ Just protecting data at rest (logs, backups)?
 
 ### Step 1: Generate and Store Keys
 
-**Always start here.** Nothing works without keys.
+**Start here.** Without keys configured, `encrypts` declarations silently produce configuration errors at runtime.
 
 ```bash
 bin/rails db:encryption:init
@@ -105,7 +105,7 @@ bin/rails runner "puts ActiveRecord::Encryption.config.primary_key.present?"
 
 ### Step 2: Check Existing Patterns
 
-**ALWAYS search the codebase first:**
+**Search the codebase first** to understand existing encryption patterns:
 
 ```bash
 # Find existing encryption declarations
@@ -181,7 +181,7 @@ end
 
 ### Step 5: Migrate Existing Unencrypted Data
 
-**If the table already has data, you MUST handle migration.**
+**If the table already has data, plan the migration.** Without this, Rails tries to decrypt plaintext rows and raises `Decryption` errors.
 
 **Phase 1: Enable coexistence**
 
@@ -232,7 +232,7 @@ Once all data is encrypted, remove the coexistence config:
 
 ### Step 6: Configure Key Rotation (Non-Deterministic Only)
 
-**⚠️ Key rotation is NOT supported for deterministic encryption.**
+**Key rotation only works for non-deterministic encryption.** Deterministic fields must keep their original key — changing it breaks all queries because ciphertexts no longer match.
 
 Add new key to the list — last key encrypts, all keys decrypt:
 
@@ -285,7 +285,8 @@ User.where(email: "user@example.com")
 **Non-deterministic — queries are impossible:**
 
 ```ruby
-# These will NEVER work with non-deterministic encryption
+# These can't work with non-deterministic encryption — each encryption
+# produces a different ciphertext, so the DB can't match against it
 User.find_by(ssn: "123-45-6789")  # => nil (always)
 User.where(ssn: "123-45-6789")    # => empty (always)
 ```
@@ -305,7 +306,7 @@ class User < ApplicationRecord
 end
 ```
 
-**⚠️ Do NOT use `case_sensitive: false` on the validation.** Use `downcase: true` or `ignore_case: true` on `encrypts` instead.
+**Don't use `case_sensitive: false` on the validation** — it doesn't work with encrypted fields because the database sees ciphertext, not plaintext. Use `downcase: true` or `ignore_case: true` on `encrypts` instead, which handles case normalization before encryption.
 
 **`downcase: true`** — Original case is lost. Simple.
 

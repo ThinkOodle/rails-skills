@@ -2,6 +2,16 @@
 
 Detailed patterns and advanced usage for Rails Minitest testing.
 
+## Table of Contents
+- [Fixture Patterns](#fixture-patterns)
+- [Test Helper Patterns](#test-helper-patterns)
+- [Advanced Test Patterns](#advanced-test-patterns)
+- [Request Test Patterns](#request-test-patterns)
+- [System Test Patterns](#system-test-patterns)
+- [Performance Testing](#performance-testing)
+- [Parallel Testing](#parallel-testing)
+- [Debugging Slow Tests](#debugging-slow-tests)
+
 ## Fixture Patterns
 
 ### Basic Fixture Structure

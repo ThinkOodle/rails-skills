@@ -6,14 +6,14 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash(bin/rails routes*), Bash(bin/
 
 # Rails Routing Expert
 
-Define clean, RESTful, minimal routes. Never generate more routes than you need.
+Define clean, RESTful, minimal routes. Extra routes create unnecessary attack surface and confuse other developers reading `routes.rb`.
 
 ## Philosophy
 
 1. **RESTful by default** — Use `resources` and `resource`. Custom routes are a smell.
 2. **Minimal surface area** — Always use `only:` or `except:` to expose just what's needed.
-3. **Path helpers everywhere** — Never hardcode a URL string. Use `_path` and `_url` helpers.
-4. **Shallow nesting only** — Never nest resources more than 1 level deep.
+3. **Path helpers everywhere** — Hardcoded URL strings break when routes change. Use `_path` and `_url` helpers.
+4. **Shallow nesting only** — Don't nest resources more than 1 level deep; deeper nesting creates painful URLs and helper names.
 5. **New resource > custom action** — If you're adding many custom actions, you need a new controller.
 
 ## When To Use This Skill
@@ -30,7 +30,7 @@ Define clean, RESTful, minimal routes. Never generate more routes than you need.
 
 ### Step 1: Check Existing Routes
 
-**ALWAYS inspect current routes before adding new ones:**
+**Inspect current routes before adding new ones** — duplicates and conflicts cause subtle bugs:
 
 ```bash
 # Show all routes
@@ -53,14 +53,14 @@ bin/rails routes --unused
 Generates 7 routes: index, show, new, create, edit, update, destroy.
 
 ```ruby
-# WRONG — generates all 7 routes when you only need 3
+# Generates all 7 routes — unused routes create dead endpoints and confuse devs
 resources :articles
 
-# RIGHT — only generate what you need
+# Better — only generate what the controller actually implements
 resources :articles, only: [:index, :show, :create]
 ```
 
-**Always ask: which actions does this controller actually implement?**
+**Ask: which actions does this controller actually implement?** Only route those.
 
 #### `resource` (singular) — For singletons
 
@@ -99,10 +99,10 @@ end
 ```
 
 ```ruby
-# NEVER DO THIS — 2+ levels deep
+# Avoid — 2+ levels creates unwieldy URLs and painful helper names
 resources :users do
   resources :articles do
-    resources :comments  # ← /users/1/articles/2/comments/3 — HELL NO
+    resources :comments  # ← /users/1/articles/2/comments/3
   end
 end
 ```
@@ -131,7 +131,7 @@ comment_path(@comment)                    # GET /comments/5
 
 ### Step 4: Namespace vs Scope vs Module
 
-These three look similar but behave DIFFERENTLY. Get this right.
+These three look similar but behave differently — mixing them up causes confusing routing bugs.
 
 #### `namespace` — Changes EVERYTHING (path + module + helpers)
 
@@ -451,14 +451,14 @@ end
 
 1. **Generating all 7 routes when you need 2** — Always use `only:` or `except:`
 2. **Nesting deeper than 1 level** — Flatten with shallow or separate resources
-3. **Hardcoding paths** — Use `article_path(@article)`, never `"/articles/#{@article.id}"`
-4. **Using `match ... via: :all`** — Be explicit about HTTP verbs
+3. **Hardcoding paths** — Hardcoded strings break when routes change; use `article_path(@article)` instead of `"/articles/#{@article.id}"`
+4. **Using `match ... via: :all`** — Exposing all HTTP verbs creates security surface; be explicit
 5. **Too many custom member/collection actions** — Extract a new resource instead
 6. **Confusing namespace/scope/module** — Check the table in Step 4
 7. **`resource` when you mean `resources`** — Singular = one thing, no index, no `:id`
 8. **Missing `only:`/`except:` on nested resources** — Nested routes bloat fast
 9. **Forgetting `resolve` with singular `resource`** — `form_with` will break without it
-10. **Route order bugs** — More specific routes go ABOVE general ones
+10. **Route order bugs** — More specific routes go above general ones (Rails matches top-down, first match wins)
 
 ## Debugging
 

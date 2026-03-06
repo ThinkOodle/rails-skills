@@ -2,6 +2,15 @@
 
 Complete patterns, templates, and edge cases for building Rails UI components.
 
+## Table of Contents
+- [CSS-Only Components](#css-only-components)
+- [Partial-Based Components](#partial-based-components)
+- [Helper Methods — Full Reference](#helper-methods--full-reference)
+- [Edge Cases & Gotchas](#edge-cases--gotchas)
+- [Component Gallery — Full Setup](#component-gallery--full-setup)
+- [Migration Guide: Repeated Markup → Component](#migration-guide-repeated-markup--component)
+- [Naming Conventions Summary](#naming-conventions-summary)
+
 ## CSS-Only Components
 
 ### Buttons

@@ -11,7 +11,7 @@ Write correct, secure, and idiomatic Rails controllers following Rails 8.1 conve
 ## Philosophy
 
 1. **Thin controllers** — Business logic belongs in models/services, not controllers
-2. **Strong parameters are non-negotiable** — Never pass raw params to models
+2. **Strong parameters protect against mass assignment** — Raw params let attackers set any attribute (admin flags, user IDs, etc.)
 3. **Convention over configuration** — Follow RESTful patterns; fight the urge to add custom actions
 4. **Fail secure** — Default to restricting access, then open up selectively
 5. **One controller, one resource** — If your controller handles two resources, split it
@@ -31,7 +31,7 @@ Write correct, secure, and idiomatic Rails controllers following Rails 8.1 conve
 
 ### Step 1: Check Existing Patterns
 
-**ALWAYS look at the project's existing controllers first:**
+**Look at the project's existing controllers first** — consistency with the codebase matters more than textbook patterns:
 
 ```bash
 # See what ApplicationController provides
@@ -47,7 +47,7 @@ ls app/controllers/concerns/
 bin/rails routes | grep resource_name
 ```
 
-**Match the project's conventions.** Consistency beats "best practice."
+Consistency beats "best practice."
 
 ### Step 2: Controller Structure
 
@@ -118,9 +118,9 @@ class ArticlesController < ApplicationController
 end
 ```
 
-### Step 3: Strong Parameters (⚠️ THE #1 BUG SOURCE)
+### Step 3: Strong Parameters
 
-This is where agents mess up the most. Read this section carefully.
+This is where most controller bugs come from — especially with nested hashes and arrays.
 
 #### Use `expect` (Rails 8+) Over `require` + `permit`
 
@@ -145,7 +145,7 @@ def user_params
   params.expect(user: [:name, address: [:street, :city, :zip]])
 end
 
-# ⚠️ WRONG — This permits NOTHING inside address
+# ⚠️ Wrong — this permits NOTHING inside address
 def user_params
   params.expect(user: [:name, :address])  # address is a hash, not a scalar!
 end
@@ -191,7 +191,7 @@ end
 | `permit(:address)` when address is a hash | `permit(address: [:street, :city])` |
 | `permit(:images)` for file uploads | `permit(images: [])` for multiple files |
 | Nested attributes without `_destroy` and `id` | `permit(items_attributes: [[:name, :id, :_destroy]])` |
-| Using `permit!` to "just make it work" | **Never.** Enumerate your params. |
+| Using `permit!` to "just make it work" | Enumerate your params — `permit!` allows attackers to set any attribute |
 
 ### Step 4: Callbacks (before_action, after_action, around_action)
 
@@ -256,12 +256,12 @@ render nothing: true, status: :ok      # empty body (deprecated — use head)
 head :no_content          # 204
 head :created, location: post_url(@post)
 
-# Render with status (ALWAYS set status on errors)
+# Render with status (Turbo requires it for error responses)
 render :new, status: :unprocessable_entity   # 422 — required for Turbo
 render :edit, status: :unprocessable_entity
 ```
 
-**Critical for Turbo/Hotwire:** Failed form submissions MUST return `status: :unprocessable_entity` (422) or Turbo won't process the response.
+**For Turbo/Hotwire:** Failed form submissions need `status: :unprocessable_entity` (422) — without it, Turbo ignores the response and the user sees no error feedback.
 
 #### respond_to for Multiple Formats
 
@@ -390,7 +390,7 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-**Don't rescue `Exception` or `StandardError`** — it breaks Rails internals.
+**Don't rescue `Exception` or `StandardError`** — they catch things like `SystemExit` and `SyntaxError`, breaking Rails internals and hiding real bugs.
 
 ### Step 10: CSRF Protection
 
@@ -442,10 +442,10 @@ request.variant = :mobile  # for device-specific views
 ## Anti-Patterns to Avoid
 
 1. **Fat controllers** — Move business logic to models/services/form objects
-2. **`permit!`** — Never. Enumerate every permitted attribute.
-3. **`params[:foo]` directly in model calls** — Always go through strong params
-4. **Skipping CSRF broadly** — Only skip for genuine API endpoints with token auth
-5. **`rescue_from Exception`** — Catches everything including syntax errors
+2. **`permit!`** — Opens the door to mass assignment attacks; enumerate every permitted attribute
+3. **`params[:foo]` directly in model calls** — Bypasses strong parameter filtering; go through the params method
+4. **Skipping CSRF broadly** — Only skip for genuine API endpoints with token auth; CSRF protects against cross-site form submissions
+5. **`rescue_from Exception`** — Catches syntax errors, SystemExit, and other things you don't want to swallow
 6. **Nested `if/else` chains in actions** — Extract to service objects
 7. **Multiple renders/redirects** — A controller action can only render or redirect once; use `and return` or early returns
 8. **Missing status on error renders** — Turbo requires `status: :unprocessable_entity`
@@ -454,13 +454,10 @@ request.variant = :mobile  # for device-specific views
 
 ## Quick Reference
 
-See `reference.md` in this skill directory for:
-- Complete param permitting patterns with examples
-- All callback types and ordering rules
-- Full rendering options
-- Session store configuration
-- Content Security Policy setup
-- `allow_browser` configuration
-- Log filtering for sensitive params
-- Force SSL configuration
-- Health check endpoints
+See the `references/` directory for detailed patterns and examples:
+- `references/strong-params.md` — Complete param permitting patterns (nested hashes, arrays, double array syntax)
+- `references/callbacks.md` — All callback types, ordering rules, halting, skip patterns
+- `references/rendering.md` — Full rendering options, redirects, flash messages, respond_to, variants
+- `references/sessions-and-cookies.md` — Session stores, cookie jar types, configuration
+- `references/security.md` — rescue_from, CSRF, HTTP auth, CSP, log filtering, Force SSL, browser version control
+- `references/streaming.md` — send_data/send_file, SSE streaming, request/response objects, API controllers, health checks

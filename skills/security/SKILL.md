@@ -35,7 +35,7 @@ Write secure Rails code by default. Security mistakes are the most dangerous mis
 
 ### Step 1: Audit the Existing Security Posture
 
-**ALWAYS check what's already in place before changing anything:**
+**Check what's already in place before changing anything** — understanding the existing security posture prevents accidentally weakening it:
 
 ```bash
 # Check CSRF configuration
@@ -62,7 +62,7 @@ ls config/credentials* config/master.key 2>/dev/null
 
 ### Step 2: CSRF Protection
 
-**Never disable CSRF protection.** Rails enables it by default. Respect it.
+**Never disable CSRF protection.** Rails enables it by default — it's your primary defense against cross-site request forgery.
 
 ```ruby
 # ApplicationController — this should ALREADY be here
@@ -71,10 +71,10 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-**Rules:**
+**How it works:**
 - Every non-GET request requires an authenticity token
 - Include `<%= csrf_meta_tags %>` in your layout `<head>` for Turbo/Ajax
-- API controllers using token auth may skip CSRF — but ONLY if they don't use cookie-based sessions
+- API controllers using token auth may skip CSRF — but only if they don't use cookie-based sessions (cookie sessions + no CSRF = attackers can forge requests)
 - Never use `skip_forgery_protection` on controllers that serve browser sessions
 
 ```ruby
@@ -92,7 +92,7 @@ end
 
 ### Step 3: XSS Prevention
 
-**Rails auto-escapes all ERB output by default. Never bypass it without justification.**
+**Rails auto-escapes all ERB output by default.** This is your primary XSS defense — bypassing it means any user-controlled string can inject scripts into other users' browsers.
 
 ```ruby
 # SAFE — auto-escaped (default)
@@ -108,11 +108,11 @@ end
 <%= sanitize(user.bio, tags: %w[p br strong em a ul ol li], attributes: %w[href title]) %>
 ```
 
-**html_safe Rules:**
-- NEVER call `.html_safe` on user input
-- NEVER call `.html_safe` on strings built with interpolation of user data
+**html_safe discipline:**
+- NEVER call `.html_safe` on user input — this is an instant XSS hole
+- NEVER call `.html_safe` on strings built with interpolation of user data — the interpolated values bypass escaping
 - Only use `.html_safe` on string literals you fully control
-- When building HTML in helpers, use `tag` builder or `content_tag` instead of string concat
+- When building HTML in helpers, use `tag` builder or `content_tag` — they handle escaping automatically
 
 ```ruby
 # WRONG — XSS vulnerability
@@ -132,13 +132,12 @@ end
 ```
 
 **sanitize() usage:**
-- Always specify allowed tags and attributes explicitly
-- Default allowlist is reasonable but review it for your context
-- For rich text, prefer Action Text which handles sanitization
+- Specify allowed tags and attributes explicitly — the default allowlist may be broader than you need
+- For rich text, prefer Action Text which handles sanitization automatically
 
 ### Step 4: SQL Injection Prevention
 
-**Never interpolate user input into SQL strings.**
+**Never interpolate user input into SQL strings.** Interpolation lets attackers inject arbitrary SQL — they can read, modify, or delete any data in your database.
 
 ```ruby
 # DANGEROUS — SQL injection
@@ -168,13 +167,11 @@ User.where("name LIKE ?", "%#{params[:q]}%")
 User.where("name LIKE ?", "%#{User.sanitize_sql_like(params[:q])}%")
 ```
 
-**Also watch for injection in:**
-- `order()` — never pass raw user input
-- `pluck()` with string args
-- `select()` with string args
-- `group()`, `having()`, `joins()` with string args
+**Less obvious injection vectors** — these methods also pass strings directly to SQL:
+- `order()` — never pass raw user input (attackers can inject subqueries)
+- `pluck()`, `select()`, `group()`, `having()`, `joins()` with string args
 - `find_by_sql()`, `connection.execute()`
-- `Arel.sql()` — only use with trusted strings
+- `Arel.sql()` — only use with trusted strings, never user input
 
 ```ruby
 # WRONG — order injection
@@ -189,7 +186,7 @@ Post.order("#{column} #{direction}")
 
 ### Step 5: Mass Assignment Protection
 
-**Always use strong parameters. Never pass raw params to model methods.**
+**Use strong parameters for every model write.** Raw params let attackers set any attribute — including admin flags, roles, and associations they shouldn't touch.
 
 ```ruby
 # WRONG — mass assignment vulnerability
@@ -205,10 +202,10 @@ end
 @user.update(user_params)
 ```
 
-**Strong params rules:**
+**Strong params guidelines:**
 - Define a private `*_params` method in every controller
 - Only permit attributes the user should be able to set
-- NEVER permit `:role`, `:admin`, `:is_admin`, `:verified` or similar privilege attributes from user input
+- NEVER permit `:role`, `:admin`, `:is_admin`, `:verified` or similar privilege attributes from user input — this is how privilege escalation happens
 - Nested attributes need explicit permitting
 
 ```ruby
@@ -229,12 +226,12 @@ end
 bin/rails generate authentication
 ```
 
-**Key authentication rules:**
-- Use `has_secure_password` — it handles bcrypt hashing
-- Use `authenticate_by` — it's timing-safe (prevents enumeration)
-- Always `reset_session` after login to prevent session fixation
+**Key authentication practices:**
+- Use `has_secure_password` — it handles bcrypt hashing correctly
+- Use `authenticate_by` — it's timing-safe, preventing attackers from enumerating valid accounts by measuring response time
+- Call `reset_session` after login to prevent session fixation (where an attacker pre-sets a session ID)
 - Require current password for password/email changes
-- Use generic error messages: "Invalid email or password" (not "User not found")
+- Use generic error messages: "Invalid email or password" (not "User not found") — specific messages reveal which accounts exist
 
 ```ruby
 # Session creation — correct pattern
@@ -264,7 +261,7 @@ end
 
 ### Step 7: Authorization
 
-**Always scope queries to the current user. Never trust IDs from params.**
+**Scope queries to the current user.** Without scoping, any authenticated user can access any record just by changing the ID in the URL.
 
 ```ruby
 # WRONG — any user can access any project by changing the ID
@@ -281,7 +278,7 @@ end
 - Scope every query to the authenticated user's permissions
 - Check authorization on every action (before_action)
 - Use `before_action :authenticate` for all protected resources
-- Prefer deny-by-default: use `before_action` with `except:` not `only:`
+- Prefer deny-by-default: `before_action` in ApplicationController with selective `skip_before_action` is safer than opt-in `only:` (new actions are protected by default instead of accidentally exposed)
 
 ```ruby
 class ApplicationController < ActionController::Base
@@ -308,15 +305,15 @@ Rails.application.config.session_store :cookie_store,
   same_site: :lax
 ```
 
-**Session rules:**
-- Store only IDs in the session, never sensitive data
+**Session guidelines:**
+- Store only IDs in the session — sensitive data in cookies is readable even when signed
 - Call `reset_session` after login (prevents session fixation)
 - Implement session expiry (absolute + idle timeout)
-- `force_ssl = true` in production — always
+- `force_ssl = true` in production — without it, session cookies travel over plain HTTP and can be stolen on public networks
 
 ### Step 9: Secrets and Credentials
 
-**Never hardcode secrets. Use Rails credentials or environment variables.**
+**Use Rails credentials or environment variables for secrets.** Hardcoded secrets end up in version control, where anyone with repo access (or a leaked backup) gets your API keys.
 
 ```bash
 # Edit credentials
@@ -335,12 +332,12 @@ Rails.application.credentials.dig(:aws, :access_key_id)
 Rails.application.credentials.some_api_key!
 ```
 
-**Rules:**
-- NEVER commit `config/master.key` or `config/credentials/*.key`
-- Add `config/master.key` and `config/credentials/*.key` to `.gitignore`
+**Key management:**
+- NEVER commit `config/master.key` or `config/credentials/*.key` — these decrypt all your secrets
+- Add them to `.gitignore` (Rails does this by default, but verify)
 - Use `ENV["RAILS_MASTER_KEY"]` in production
-- Never log or expose credentials in error messages
-- Rotate secrets if they may have been exposed
+- Avoid logging or exposing credentials in error messages
+- Rotate secrets immediately if they may have been exposed
 
 ### Step 10: Content Security Policy
 
@@ -384,7 +381,7 @@ Rails.application.config.filter_parameters += [
 ]
 ```
 
-**Never log:**
+**Avoid logging** (these show up in log files, error trackers, and potentially third-party services):
 - Passwords, tokens, API keys, secrets
 - Credit card numbers, SSNs, PII
 - Full request bodies that may contain sensitive data
@@ -432,12 +429,12 @@ end
 # Active Storage handles this — it uses random keys
 ```
 
-**File upload rules:**
-- Validate content type AND file extension
-- Set maximum file size limits
-- Store uploads outside the web root (Active Storage does this)
+**File upload guidelines:**
+- Validate content type AND file extension — attackers can spoof one but rarely both
+- Set maximum file size limits to prevent denial-of-service via large uploads
+- Store uploads outside the web root (Active Storage does this automatically)
 - Never execute uploaded files
-- Process images/media asynchronously
+- Process images/media asynchronously — image processing libraries can have vulnerabilities
 - Scan for malware in sensitive applications
 
 ## Quick Reference
@@ -465,18 +462,18 @@ validates :url, format: { with: /^https?:\/\/.+$/ }
 validates :url, format: { with: /\Ahttps?:\/\/.+\z/ }
 ```
 
-## Anti-Patterns to NEVER Introduce
+## Anti-Patterns — Each of These Is a Vulnerability
 
-1. **`html_safe` on user input** — Instant XSS. No exceptions
-2. **String interpolation in SQL** — Use `?` placeholders or hash conditions
-3. **`params.permit!`** — Permits everything, defeats strong params entirely
-4. **`skip_forgery_protection`** on browser controllers — Opens CSRF attacks
-5. **`redirect_to params[:url]`** — Open redirect. Validate with `url_from` or permit-list
-6. **Hardcoded secrets in source** — Use credentials or ENV vars
-7. **`Kernel#open` with user input** — Use `File.open`, `URI.open`, or `IO.open`
-8. **Disabling `force_ssl` in production** — Cookies become stealable
-9. **Logging sensitive data** — Filter parameters properly
-10. **Trusting client-side validation** — Always validate server-side
+1. **`html_safe` on user input** — Instant XSS. Attackers inject scripts that run in other users' browsers
+2. **String interpolation in SQL** — SQL injection lets attackers read/modify/delete your entire database
+3. **`params.permit!`** — Permits everything, letting attackers set admin flags, roles, or any attribute
+4. **`skip_forgery_protection`** on browser controllers — Lets malicious sites submit forms on behalf of your users
+5. **`redirect_to params[:url]`** — Open redirect. Attackers craft links that look like your site but redirect to phishing pages
+6. **Hardcoded secrets in source** — Anyone with repo access (or a leaked backup) gets your API keys
+7. **`Kernel#open` with user input** — `open("| rm -rf /")` executes shell commands. Use `File.open`, `URI.open`, or `IO.open`
+8. **Disabling `force_ssl` in production** — Session cookies travel in plaintext, stealable on any shared network
+9. **Logging sensitive data** — Logs end up in error trackers, log aggregators, and developer machines
+10. **Trusting client-side validation** — Attackers bypass JavaScript trivially; server-side validation is the real gate
 
 ## Security Audit Checklist
 

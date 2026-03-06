@@ -472,4 +472,9 @@ end
 
 ## Reference
 
-For detailed patterns, edge cases, and advanced usage, see [reference.md](reference.md).
+For detailed patterns, edge cases, and advanced usage, see the `references/` directory:
+- `references/api-and-attributes.md` — Model vs API, typed attributes, naming, translation, conversion
+- `references/validations-and-callbacks.md` — All validators, custom validators, callbacks, error handling
+- `references/dirty-tracking.md` — Manual and automatic change tracking
+- `references/serialization.md` — serializable_hash, JSON serialization
+- `references/patterns.md` — Form objects, wizards, service objects, lint tests, edge cases

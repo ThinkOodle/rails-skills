@@ -2,6 +2,19 @@
 
 Detailed patterns, provider configurations, edge cases, and advanced usage for Action Mailbox in Rails.
 
+## Table of Contents
+- [Ingress Provider Configuration](#ingress-provider-configuration)
+- [Advanced Routing Patterns](#advanced-routing-patterns)
+- [Working with Email Content](#working-with-email-content)
+- [Callbacks In Depth](#callbacks-in-depth)
+- [Testing Patterns](#testing-patterns)
+- [Error Handling Patterns](#error-handling-patterns)
+- [Incineration Details](#incineration-details)
+- [Production Checklist](#production-checklist)
+- [Common Gotchas](#common-gotchas)
+- [Useful Gems](#useful-gems)
+- [Rails Console Recipes](#rails-console-recipes)
+
 ## Ingress Provider Configuration
 
 ### Mailgun

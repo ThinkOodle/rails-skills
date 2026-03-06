@@ -8,6 +8,13 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash(bundle add lucide-rails), Bas
 
 Render Lucide icons as inline SVGs via the `lucide-rails` gem. Icons use `currentColor` so they inherit text color automatically.
 
+## When To Use This Skill
+
+- Adding icons to a Rails view (buttons, nav, badges, empty states)
+- Choosing the right Lucide icon name for a UI element
+- Making icons accessible (decorative vs interactive)
+- Styling or sizing SVG icons with CSS
+
 ## Philosophy
 
 1. **Icons are decoration until they aren't** — Decorative icons need no label. Interactive icons (buttons, links) MUST have accessible text.

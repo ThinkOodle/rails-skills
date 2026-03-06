@@ -42,11 +42,11 @@ Before writing any code, determine the relationship:
 | Polymorphic | `has_many :things, as: :thingable` | `belongs_to :thingable, polymorphic: true` | Child table (`_id` + `_type`) |
 | Self-referential | `has_many :children, class_name: "Self"` | `belongs_to :parent, class_name: "Self"` | Same table |
 
-**The Golden Rule:** `belongs_to` goes on the model whose table has the foreign key column. Period.
+**The golden rule:** `belongs_to` goes on the model whose table has the foreign key column.
 
 ### Step 2: Check Existing Patterns
 
-**ALWAYS look at the existing codebase first:**
+**Look at the existing codebase first** — existing patterns tell you what conventions to follow:
 
 ```bash
 # Find existing associations
@@ -139,9 +139,9 @@ create_table :appointments do |t|
 end
 ```
 
-### Step 4: Always Set `dependent:`
+### Step 4: Set `dependent:` on Every Association
 
-**This is non-negotiable.** Every `has_many` and `has_one` needs a `dependent:` option.
+Every `has_many` and `has_one` needs a `dependent:` option — without one, deleting a parent leaves orphaned child records with dangling foreign keys.
 
 | Option | When to Use |
 |---|---|
@@ -152,14 +152,14 @@ end
 | `dependent: :destroy_async` | Large datasets. Enqueues background job. Requires Active Job. Don't use with DB-level FK constraints. |
 
 ```ruby
-# WRONG — orphaned records when author is destroyed
+# Missing dependent — orphaned records when author is destroyed
 has_many :books
 
-# RIGHT
+# Fixed — children cleaned up properly
 has_many :books, dependent: :destroy
 ```
 
-**On `belongs_to`:** Don't set `dependent:` on `belongs_to`. It causes confusion and can lead to circular destruction.
+**On `belongs_to`:** Don't set `dependent:` on `belongs_to` — it causes confusion and can lead to circular destruction.
 
 ### Step 5: Handle Eager Loading (Kill N+1)
 
@@ -257,12 +257,12 @@ t.references :commentable, polymorphic: true, null: false
 ### 1. FK on the Wrong Table
 
 ```ruby
-# WRONG — puts FK on authors table (authors don't have book_id!)
+# Wrong — puts FK on authors table (authors don't have book_id!)
 class Author < ApplicationRecord
-  belongs_to :book  # NO!
+  belongs_to :book  # ← backwards
 end
 
-# RIGHT — books table has author_id
+# Correct — books table has author_id
 class Book < ApplicationRecord
   belongs_to :author
 end
@@ -275,7 +275,7 @@ end
 ```ruby
 # Destroys author, leaves orphaned books with dangling author_id
 class Author < ApplicationRecord
-  has_many :books  # BUG
+  has_many :books  # ← missing dependent
 end
 
 # Fixed
@@ -287,12 +287,12 @@ end
 ### 3. Using HABTM Instead of `has_many :through`
 
 ```ruby
-# DON'T — can't add attributes, callbacks, or validations to the join
+# Avoid — can't add attributes, callbacks, or validations to the join
 class Student < ApplicationRecord
   has_and_belongs_to_many :courses
 end
 
-# DO — flexible, extensible, future-proof
+# Better — flexible, extensible, future-proof
 class Student < ApplicationRecord
   has_many :enrollments, dependent: :destroy
   has_many :courses, through: :enrollments
@@ -471,8 +471,8 @@ Author.reset_counters(author_id, :books)
 
 ## Anti-Patterns to Avoid
 
-1. **No `dependent:` on `has_many`/`has_one`** — always set it
-2. **HABTM** — use `has_many :through` instead, every time
+1. **No `dependent:` on `has_many`/`has_one`** — orphaned records cause subtle data bugs
+2. **HABTM** — use `has_many :through` instead; HABTM can't hold attributes, validations, or callbacks on the join
 3. **Missing database constraints** — `foreign_key: true` in migrations
 4. **Lazy loading in loops** — use `includes` / `preload` / `eager_load`
 5. **Polymorphic for 2 models** — just use separate foreign keys
@@ -482,4 +482,10 @@ Author.reset_counters(author_id, :books)
 9. **Forgetting the migration** — associations don't create columns
 10. **`dependent: :destroy` on huge collections** — use `:delete_all` or `:destroy_async`
 
-For detailed patterns, options reference, and advanced examples, see `reference.md` in this skill directory.
+For detailed patterns, options reference, and advanced examples, see the `references/` directory:
+- `references/association-types.md` — Deep dive into belongs_to, has_one, has_many, has_many :through, HABTM
+- `references/polymorphic.md` — Polymorphic associations, STI, and delegated types
+- `references/self-referential.md` — Tree structures, manager-employee, social follows
+- `references/eager-loading.md` — includes/preload/eager_load strategies, inverse_of
+- `references/counter-caches.md` — Counter caches, scoped associations, callbacks, extensions
+- `references/testing.md` — Testing patterns, migration examples, performance tips, troubleshooting

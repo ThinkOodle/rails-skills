@@ -10,6 +10,15 @@ Build fast, reliable, maintainable test suites for Rails applications. This skil
 
 > **Companion skill:** For Minitest-specific assertions, fixtures deep-dive, TDD workflow, and RSpec-to-Minitest conversion, see the **minitest** skill.
 
+## When To Use This Skill
+
+- Setting up or configuring a Rails test suite
+- Choosing between test types (system, request, model, job, mailer, etc.)
+- Writing system tests with Capybara
+- Configuring parallel testing or CI pipelines
+- Debugging flaky tests or test database issues
+- Adding test coverage for new features
+
 ## Philosophy
 
 ### The Testing Pyramid — Enforce It
@@ -193,7 +202,7 @@ end
 - `cookies`, `flash`, `session`
 - `@controller`, `@request`, `@response`
 
-> **See reference.md** for JSON API tests, Turbo Stream tests, file uploads, auth patterns, and DOM assertions.
+> **See `references/request-tests.md`** for JSON API tests, Turbo Stream tests, file uploads, auth patterns, and DOM assertions.
 
 ## System Tests (Use Sparingly)
 
@@ -268,7 +277,7 @@ end
 - Never use `sleep` — always use Capybara's wait-aware assertions
 - `take_screenshot` for debugging; failed tests auto-capture to `tmp/screenshots/`
 
-> **See reference.md** for Capybara DSL reference, Cuprite setup, JS interaction patterns, and mobile testing.
+> **See `references/system-tests.md`** for Capybara DSL reference, Cuprite setup, JS interaction patterns, and Turbo/Stimulus testing.
 
 ## Mailer Tests
 
@@ -290,7 +299,7 @@ end
 **From request tests:** `assert_emails 1 { post users_url, params: {...} }`
 **Enqueued:** `assert_enqueued_email_with UserMailer, :welcome, args: [user] { ... }`
 
-> **See reference.md** for multipart emails, attachments, parameterized mailers, and previews.
+> **See `references/helpers-and-assertions.md`** for multipart emails, attachments, parameterized mailers, and previews.
 
 ## Job Tests
 
@@ -318,7 +327,7 @@ class OrderTest < ActiveSupport::TestCase
 end
 ```
 
-> **See reference.md** for job queue assertions, filtering, chained jobs, and exception testing.
+> **See `references/helpers-and-assertions.md`** for job queue assertions, filtering, chained jobs, and exception testing.
 
 ## Helper Tests
 
@@ -362,7 +371,7 @@ end
 
 **Broadcast assertions (usable in any test):** `include ActionCable::TestHelper` then use `assert_broadcast_on`, `assert_broadcasts`.
 
-> **See reference.md** for stream assertions, custom channel methods, and broadcast testing from models.
+> **See `references/helpers-and-assertions.md`** for stream assertions, custom channel methods, and broadcast testing from models.
 
 ## Test Database Management
 
@@ -424,7 +433,7 @@ Use for JRuby/TruffleRuby, or when process forking is expensive.
 
 Use `parallelize_setup`/`parallelize_teardown` hooks for per-worker setup. Default threshold is 50 tests (won't parallelize below that). Customize with `config.active_support.test_parallelization_threshold = 100`.
 
-> **See reference.md** for process vs thread comparison, hooks, and common parallel testing issues.
+> **See `references/parallel-testing.md`** for process vs thread comparison, hooks, and common parallel testing issues.
 
 ## CI Configuration
 
@@ -442,7 +451,7 @@ bin/rails test:system             # System tests (separate job recommended)
 
 **CI tips:** Parallelize with `PARALLEL_WORKERS`, separate system tests into their own CI job, cache gems/node_modules, use headless Chrome, add a Zeitwerk eager-load test.
 
-> **See reference.md** for full GitHub Actions YAML and CI patterns.
+> **See `references/ci.md`** for full GitHub Actions YAML and CI patterns.
 
 ## Time-Dependent Tests
 
@@ -453,7 +462,7 @@ travel 3.days do ... end                                  # Travel forward
 travel_back                                               # Return to real time
 ```
 
-> **See reference.md** for detailed time testing patterns and common pitfalls.
+> **See `references/parallel-testing.md`** for detailed time testing patterns, common pitfalls, and flaky test fixes.
 
 ## Anti-Patterns to Avoid
 

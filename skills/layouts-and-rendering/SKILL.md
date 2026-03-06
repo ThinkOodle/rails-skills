@@ -498,3 +498,7 @@ end
 8. **Forgetting `fallback_location` with `redirect_back`** — Will raise if no referer
 9. **`render file:` with user input** — Path traversal vulnerability
 10. **`content_for` when `provide` suffices** — `provide` is streaming-friendly
+
+---
+
+See `reference.md` in this skill directory for detailed rendering patterns, layout examples, and edge cases.

@@ -375,16 +375,13 @@ end
 
 ### Step 8: Common Patterns
 
-See `reference.md` in this skill directory for detailed implementations of:
-- Inline editing with frames
-- Tab navigation with frames
-- Flash messages with streams
-- Live search / filtering
-- Modal dialogs
-- Infinite scroll
-- Nested forms with stream appends
-- Counter/badge updates
-- Toast notifications
+See the `references/` directory for detailed implementations:
+- `references/frames.md` — Inline editing, tab navigation, lazy loading, modals, infinite scroll
+- `references/streams.md` — Flash messages, live search, nested forms, counters, toasts, template conventions
+- `references/broadcasting.md` — Scoped broadcasts, user-specific streams, background job patterns
+- `references/morphing.md` — Turbo 8 morph refresh setup, when to use morph vs streams
+- `references/testing.md` — Integration tests, system tests, broadcast assertions
+- `references/edge-cases.md` — Stimulus integration, gotchas (file uploads, DELETE redirects, CSP, caching)
 
 ## Quick Reference
 

@@ -2,6 +2,22 @@
 
 Detailed patterns, configuration examples, and edge cases for Rails Active Storage.
 
+## Table of Contents
+- [Cloud Service Configuration](#cloud-service-configuration)
+- [Variant Processing Deep Dive](#variant-processing-deep-dive)
+- [Previews (Non-Image Files)](#previews-non-image-files)
+- [Direct Uploads](#direct-uploads)
+- [Querying Attachments](#querying-attachments)
+- [Serving Files](#serving-files)
+- [Attaching File/IO Objects](#attaching-fileio-objects)
+- [Downloading Files](#downloading-files)
+- [Purging Unattached Uploads](#purging-unattached-uploads)
+- [Analyzers](#analyzers)
+- [Testing Patterns](#testing-patterns)
+- [Content Type Validation](#content-type-validation)
+- [Custom Metadata](#custom-metadata)
+- [Edge Cases & Gotchas](#edge-cases--gotchas)
+
 ## Cloud Service Configuration
 
 ### Amazon S3
