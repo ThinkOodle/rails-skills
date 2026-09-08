@@ -19,16 +19,20 @@ A collection of Ruby on Rails skills for AI coding agents like [OpenCode](https:
 | `active-record-querying` | Database queries — scopes, joins, includes, N+1 prevention, pluck, batching |
 | `active-record-validations` | Data validation — built-in validators, custom validators, DB constraint pairing |
 | `active-storage` | File uploads — attachments, variants, direct uploads, S3/GCS/Azure |
+| `active-storage-multitenant` | Active Storage on activerecord-tenanted shards — tenant-signed blob IDs |
+| `activerecord-tenanted` | SQLite-per-tenant via Basecamp activerecord-tenanted (not Nebula acts_as_tenant) |
 | `caching` | Caching strategies — fragment, Russian doll, Solid Cache, conditional GET |
 | `css-architecture` | Modern CSS — custom properties, @layer, light-dark(), design tokens, components |
 | `form-helpers` | Forms — form_with, nested attributes, select helpers, file uploads |
 | `generators` | Rails generators — built-in, custom, templates, configuration |
 | `i18n` | Internationalization — translations, locale files, pluralization, lazy lookups |
+| `identity-membership` | Identity vs User, tenant memberships, roles, join codes |
 | `layouts-and-rendering` | Views — render vs redirect, layouts, partials with locals, content_for |
 | `lucide-icons` | Lucide icon library — lucide-rails gem, SVG icons, accessibility |
 | `magic-link-auth` | Passwordless email-code auth — the Basecamp/Fizzy token/code pattern |
 | `migrations` | Database migrations — creating tables, columns, indexes, reversible migrations |
 | `minitest` | Testing with Minitest — fixtures, assertions, test types, TDD workflow |
+| `outgoing-webhooks` | Signed outbound webhooks — SSRF pin, HMAC, delivery jobs, auto-disable |
 | `propshaft` | Asset pipeline — Propshaft (Rails 8 default), CSS organization, import maps |
 | `rails-components` | UI components — partials, CSS components, helpers, component patterns |
 | `routing` | Routes — resources, nested routes, namespace vs scope, constraints, concerns |
