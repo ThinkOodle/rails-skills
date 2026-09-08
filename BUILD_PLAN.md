@@ -7,7 +7,7 @@ skills/<name>/
 └── reference.md   # Detailed patterns, examples, edge cases
 ```
 
-## Complete Skill List (28 skills)
+## Complete Skill List (29 skills)
 
 ### Batch 1: Core Active Record + Routing
 1. **migrations** — Herald doc + Rails guide merged
@@ -48,9 +48,9 @@ skills/<name>/
 26. **uuid-primary-keys** — Herald doc
 27. **lucide-icons** — Herald doc
 28. **generators** — Rails guide
+29. **magic-link-auth** — Fizzy + Herald token/code (passwordless) pattern
 
 ### Maybe Later / Niche
-- **magic-link-auth** — Herald doc (pattern-specific)
 - **active-storage-multitenant** — Herald doc (gem-specific)
 - **active-record-postgresql** — Rails guide (DB-specific)
 - **multiple-databases** — Rails guide

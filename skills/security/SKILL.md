@@ -220,7 +220,9 @@ end
 
 ### Step 6: Authentication
 
-**Use the Rails 8+ authentication generator as your starting point:**
+**Passwordless email-code auth (Basecamp, Fizzy, Herald):** do not use the Rails 8 password generator. Follow the `magic-link-auth` skill — codes for humans, session/pending/access tokens for machines.
+
+**Password-based apps:** start from the Rails 8+ authentication generator:
 
 ```bash
 bin/rails generate authentication
