@@ -7,7 +7,7 @@ skills/<name>/
 └── reference.md   # Detailed patterns, examples, edge cases
 ```
 
-## Complete Skill List (29 skills)
+## Complete Skill List (33 skills)
 
 ### Batch 1: Core Active Record + Routing
 1. **migrations** — Herald doc + Rails guide merged
@@ -49,9 +49,12 @@ skills/<name>/
 27. **lucide-icons** — Herald doc
 28. **generators** — Rails guide
 29. **magic-link-auth** — Fizzy + Herald token/code (passwordless) pattern
+30. **activerecord-tenanted** — Herald/Cortex/Innkeeper SQLite-per-tenant (not Nebula acts_as_tenant)
+31. **identity-membership** — Identity vs User, memberships, join codes
+32. **outgoing-webhooks** — SSRF, HMAC, delivery jobs (Fizzy + Herald)
+33. **active-storage-multitenant** — Active Storage on tenant shards
 
 ### Maybe Later / Niche
-- **active-storage-multitenant** — Herald doc (gem-specific)
 - **active-record-postgresql** — Rails guide (DB-specific)
 - **multiple-databases** — Rails guide
 - **composite-primary-keys** — Rails guide
@@ -59,7 +62,6 @@ skills/<name>/
 - **configuring** — Rails guide
 - **autoloading** — Rails guide
 - **active-support** — Rails guide (massive, might need splitting)
-- **active-model** — Rails guide
 
 ## Build Notes
 - Each SKILL.md: opinionated, agent-focused ("do this, not that"), not a docs dump

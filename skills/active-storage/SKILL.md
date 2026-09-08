@@ -17,6 +17,7 @@ Implement file uploads, attachments, image processing, and cloud storage in Rail
 4. **Handle missing attachments** — Never assume an attachment exists
 5. **Proxy in production, redirect in development** — Proxy mode works with CDNs
 6. **Use named variants** — Define variants on the model, not in views
+7. **Tenanted SQLite apps** — `activerecord-tenanted` blobs 404 after save unless you follow `active-storage-multitenant`
 
 ## When To Use This Skill
 
@@ -27,6 +28,7 @@ Implement file uploads, attachments, image processing, and cloud storage in Rail
 - Debugging attachment issues (missing files, broken variants)
 - Migrating between storage services
 - Testing file uploads
+- Debugging 404s on saved images in an `activerecord-tenanted` app (switch to `active-storage-multitenant`)
 
 ## Instructions
 

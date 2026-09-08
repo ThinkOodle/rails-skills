@@ -458,4 +458,4 @@ Cover: valid code sets `session_token` and destroys the MagicLink; invalid/expir
 
 ## Reference
 
-See [reference.md](reference.md) for Identity vs User, Herald/Mosaic variants, JSON/native-app contract, personal access tokens, Current attributes, and test helpers.
+See [reference.md](reference.md) for Identity vs User (also the `identity-membership` skill), Herald/Mosaic variants, JSON/native-app contract, personal access tokens, Current attributes, and test helpers.
