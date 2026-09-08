@@ -1,5 +1,7 @@
 # Authentication & Authorization Patterns
 
+For passwordless email-code auth (Basecamp, Fizzy, Herald), use the `magic-link-auth` skill instead of the password generator.
+
 ## Rails 8 Authentication Generator
 
 ```bash

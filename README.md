@@ -26,6 +26,7 @@ A collection of Ruby on Rails skills for AI coding agents like [OpenCode](https:
 | `i18n` | Internationalization — translations, locale files, pluralization, lazy lookups |
 | `layouts-and-rendering` | Views — render vs redirect, layouts, partials with locals, content_for |
 | `lucide-icons` | Lucide icon library — lucide-rails gem, SVG icons, accessibility |
+| `magic-link-auth` | Passwordless email-code auth — the Basecamp/Fizzy token/code pattern |
 | `migrations` | Database migrations — creating tables, columns, indexes, reversible migrations |
 | `minitest` | Testing with Minitest — fixtures, assertions, test types, TDD workflow |
 | `propshaft` | Asset pipeline — Propshaft (Rails 8 default), CSS organization, import maps |
